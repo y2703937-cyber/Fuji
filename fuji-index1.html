@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>富士山能见度指数 · 湘南</title>
+<style>
+:root{
+  --bg1:#0a0f1e; --bg2:#1a2748; --card:rgba(255,255,255,.07); --line:rgba(255,255,255,.12);
+  --tx:#eef2fb; --mu:#9fb0d0; --acc:#ff9e5e;
+  --g:#5fe3a1; --y:#d9e85f; --o:#ffc857; --r:#ff7a7a; --b:#8aa4d6;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:linear-gradient(180deg,var(--bg1),var(--bg2) 60%,#2a2f55);color:var(--tx);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"Hiragino Sans","PingFang SC","Noto Sans CJK SC",sans-serif;min-height:100%}
+body{padding:max(12px,env(safe-area-inset-top)) 12px max(20px,env(safe-area-inset-bottom))}
+#app{max-width:520px;margin:0 auto}
+.top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+h1{font-size:17px;margin:0;letter-spacing:.02em}
+select{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:10px;padding:6px 8px;font-size:13px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--mu);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:4px 10px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--g);box-shadow:0 0 0 0 rgba(95,227,161,.7);animation:pulse 2s infinite}
+.chip.err .dot{background:var(--r);animation:none}
+.chip.flash{border-color:var(--acc);color:var(--acc)}
+@keyframes pulse{70%{box-shadow:0 0 0 7px rgba(95,227,161,0)}100%{box-shadow:0 0 0 0 rgba(95,227,161,0)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px;margin-top:10px}
+.card h2{font-size:13px;margin:0 0 8px;color:var(--mu);font-weight:600;letter-spacing:.04em}
+.hero{padding:0;overflow:hidden}
+.hero svg{display:block;width:100%;height:auto}
+.nums{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px 0}
+.num{background:rgba(0,0,0,.22);border-radius:14px;padding:8px 10px}
+.num small{color:var(--mu);font-size:12px}
+.num b{display:block;font-size:40px;line-height:1.05;font-variant-numeric:tabular-nums}
+.verdict{padding:8px 14px 14px}
+.verdict .v1{font-size:19px;font-weight:700}
+.verdict .v2{color:var(--mu);font-size:13px;margin-top:2px}
+.nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.nav button{background:var(--card);color:var(--tx);border:1px solid var(--line);border-radius:12px;padding:8px 14px;font-size:15px}
+.nav .t{font-weight:600;text-align:center;flex:1}
+.nav .t small{display:block;color:var(--mu);font-weight:400;font-size:12px}
+.call{border-color:rgba(255,158,94,.5);background:rgba(255,158,94,.1)}
+.call b{color:var(--acc)}
+.win{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
+.win:first-of-type{border-top:0}
+.win .k{font-size:12px;border-radius:8px;padding:1px 8px;white-space:nowrap;align-self:center}
+.k.full{background:rgba(95,227,161,.18);color:var(--g)} .k.cap{background:rgba(255,200,87,.18);color:var(--o)}
+.sub{color:var(--mu);font-size:12px}
+.bands{display:grid;grid-template-columns:54px 1fr 34px;gap:4px 8px;align-items:center;font-size:12px;color:var(--mu)}
+.bar{height:8px;border-radius:6px;background:rgba(255,255,255,.08);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px}
+.log{font-size:12.5px;color:var(--mu);margin:0;padding:0;list-style:none}
+.log li{padding:5px 0;border-top:1px solid var(--line)} .log li:first-child{border-top:0}
+.log b{color:var(--tx)}
+details summary{cursor:pointer;color:var(--mu);font-size:13px}
+details p{font-size:12.5px;color:var(--mu);margin:8px 0 0}
+.empty{padding:40px 10px;text-align:center;color:var(--mu)}
+
+.tabs{display:flex;gap:6px;margin-top:10px}
+.tabs button{flex:1;background:var(--card);color:var(--mu);border:1px solid var(--line);border-radius:12px;padding:8px;font-size:14px}
+.tabs button.on{color:var(--tx);border-color:var(--acc);background:rgba(255,158,94,.12);font-weight:600}
+.rk{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:9px 0;border-top:1px solid var(--line);cursor:pointer}
+.rk:first-of-type{border-top:0}
+.rk .n{color:var(--mu);font-size:13px;text-align:center}
+.rk .nm{font-size:14.5px;font-weight:600}
+.rk .sc{display:flex;gap:6px;align-items:baseline;font-variant-numeric:tabular-nums}
+.rk .sc b{font-size:22px;line-height:1}
+.rk .sc small{font-size:11px;color:var(--mu)}
+.tag{display:inline-block;font-size:11px;border-radius:7px;padding:0 6px;margin-right:4px;background:rgba(255,255,255,.1);color:var(--mu)}
+.tag.hi{background:rgba(255,122,122,.18);color:var(--r)} .tag.mid{background:rgba(255,200,87,.18);color:var(--o)} .tag.ok{background:rgba(95,227,161,.15);color:var(--g)}
+.risks{display:grid;grid-template-columns:1fr auto;gap:6px 10px;font-size:14px;align-items:center}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="top">
+    <h1>🗻 富士山能见度</h1>
+    <select id="view" aria-label="观测点"></select>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+    <span class="chip" id="live"><i class="dot"></i><span id="liveTx">正在取得数据…</span></span>
+    <button id="reload" class="chip" style="cursor:pointer;color:var(--tx)">立即刷新</button>
+  </div>
+  <div class="tabs"><button data-tab="one" class="on">单点详情</button><button data-tab="all">全国一览</button></div>
+  <div id="main"><div class="card empty">正在抓取最新气象数据…</div></div>
+</div>
+
+<script>
+// ==CORE==
+const FUJI = {lat:35.36061, lon:138.72731, peak:3776};
+// hide = 地形/建筑挡住的海拔估算(m)，elev = 观测点海拔(m)。都是目安，可按实际调整
+const VIEWS = {
+  ensh:  {r:'湘南・神奈川', name:'江ノ島',            lat:35.2994, lon:139.4815, elev:5,    hide:2000},
+  ina:   {r:'湘南・神奈川', name:'稲村ヶ崎（鎌倉）',  lat:35.3022, lon:139.5254, elev:5,    hide:2000},
+  yui:   {r:'湘南・神奈川', name:'由比ヶ浜（鎌倉）',  lat:35.3066, lon:139.5480, elev:5,    hide:2000},
+  zushi: {r:'湘南・神奈川', name:'逗子海岸',          lat:35.2935, lon:139.5800, elev:5,    hide:2000},
+  tokyotw:{r:'东京',       name:'東京タワー',        lat:35.6586, lon:139.7454, elev:150,  hide:2300},
+  skytree:{r:'东京',       name:'東京スカイツリー',  lat:35.7101, lon:139.8107, elev:350,  hide:2000},
+  tocho: {r:'东京',        name:'都庁展望室（新宿）',lat:35.6896, lon:139.6917, elev:200,  hide:2300},
+  takao: {r:'东京',        name:'高尾山',            lat:35.6254, lon:139.2437, elev:599,  hide:1500},
+  nokogiri:{r:'千叶・茨城',name:'鋸山（房総）',      lat:35.1558, lon:139.8314, elev:330,  hide:2300},
+  tsukuba:{r:'千叶・茨城', name:'筑波山',            lat:36.2253, lon:140.1067, elev:877,  hide:2500},
+  kawaguchi:{r:'山梨',     name:'河口湖・大石公園',  lat:35.5239, lon:138.7633, elev:830,  hide:1000},
+  yamanaka:{r:'山梨',      name:'山中湖',            lat:35.4100, lon:138.8650, elev:980,  hide:1000},
+  tagonoura:{r:'静冈・伊豆',name:'田子の浦',         lat:35.1400, lon:138.7500, elev:3,    hide:300},
+  miho:  {r:'静冈・伊豆',  name:'三保松原',          lat:35.0116, lon:138.5222, elev:3,    hide:500},
+  nihondaira:{r:'静冈・伊豆',name:'日本平',          lat:34.9835, lon:138.4227, elev:300,  hide:800},
+  ose:   {r:'静冈・伊豆',  name:'大瀬崎（西伊豆）',  lat:35.0285, lon:138.7745, elev:5,    hide:300},
+  kurumayama:{r:'长野',    name:'霧ヶ峰・車山',      lat:36.1000, lon:138.1900, elev:1925, hide:2500}
+};
+const TS = [0, 0.22, 0.45, 0.70, 1];
+const PW = [0.7, 0.6, 0.6, 0.6, 1.6];
+const LV = [1000,950,900,850,800,700,600,500];
+const EDGES = [3776,3500,3250,3000,2750,2500,2250,2000,1750,1500,1250,1000];
+const BAND_H = EDGES.slice(0,-1).map((e,i)=> i===0 ? 3720 : (e+EDGES[i+1])/2);
+const BAND_W = BAND_H.map(h=>1+(3776-h)/1200);
+const CLEAR_T = 0.45;
+const R_EFF = 7323; // km，含大气折射的等效地球半径
+
+function clamp(x,a,b){return Math.max(a,Math.min(b,x));}
+function nn(v){return (typeof v==='number' && isFinite(v)) ? v : null;}
+function toRad(d){return d*Math.PI/180;}
+function distKm(a,b,c,d){const p=toRad(c-a),q=toRad(d-b);const x=Math.sin(p/2)**2+Math.cos(toRad(a))*Math.cos(toRad(c))*Math.sin(q/2)**2;return 2*6371*Math.asin(Math.sqrt(x));}
+function bearing(a,b,c,d){const y=Math.sin(toRad(d-b))*Math.cos(toRad(c));const x=Math.cos(toRad(a))*Math.sin(toRad(c))-Math.sin(toRad(a))*Math.cos(toRad(c))*Math.cos(toRad(d-b));return (Math.atan2(y,x)*180/Math.PI+360)%360;}
+function angDiff(a,b){const d=Math.abs(a-b)%360;return d>180?360-d:d;}
+
+function viewMeta(v){
+  const d=distKm(v.lat,v.lon,FUJI.lat,FUJI.lon), hobs=v.elev||0, hk=hobs/1000;
+  const dh=Math.sqrt(2*R_EFF*hk);
+  const curv=d>dh?Math.pow(d-dh,2)/(2*R_EFF)*1000:0;     // 地球曲率挡住的高度(m)
+  return {d, brg:bearing(v.lat,v.lon,FUJI.lat,FUJI.lon), brgBack:bearing(FUJI.lat,FUJI.lon,v.lat,v.lon),
+          hide:Math.max(v.hide||0,curv), hobs};
+}
+// 太阳方位角/高度角。ms 为「JST 当地时间按 UTC 解析」的毫秒（Date.parse(time+':00Z')）
+function sunPos(ms,lat,lon){
+  const d=new Date(ms-9*3600e3), jd=d.getTime()/864e5+2440587.5, n=jd-2451545.0;
+  const L=(280.46+0.9856474*n)%360, g=toRad((357.528+0.9856003*n)%360);
+  const lam=toRad(L+1.915*Math.sin(g)+0.02*Math.sin(2*g)), eps=toRad(23.439-0.0000004*n);
+  const ra=Math.atan2(Math.cos(eps)*Math.sin(lam),Math.cos(lam)), dec=Math.asin(Math.sin(eps)*Math.sin(lam));
+  const gmst=((18.697374558+24.06570982441908*n)%24+24)%24;
+  const H=toRad(((gmst*15+lon-ra*180/Math.PI)%360+540)%360-180);
+  const la=toRad(lat);
+  const el=Math.asin(Math.sin(la)*Math.sin(dec)+Math.cos(la)*Math.cos(dec)*Math.cos(H));
+  const az=(Math.atan2(Math.sin(H),Math.cos(H)*Math.sin(la)-Math.tan(dec)*Math.cos(la))*180/Math.PI+180+360)%360;
+  return {az,el:el*180/Math.PI};
+}
+// 逆光强度 0–1：太阳在富士山方向±40°内，且高度角越低越强
+function backStrength(ti,view,meta){
+  const p=sunPos(ti+30*60e3,view.lat,view.lon);
+  if(p.el<-1||p.el>35) return {s:0,az:p.az,el:p.el};
+  const s=clamp(1-angDiff(p.az,meta.brg)/40,0,1)*clamp(1-p.el/35,0,1);
+  return {s,az:p.az,el:p.el};
+}
+
+function pointsFor(view){
+  return TS.map(t=>({lat:+(view.lat+(FUJI.lat-view.lat)*t).toFixed(4), lon:+(view.lon+(FUJI.lon-view.lon)*t).toFixed(4)}));
+}
+function hourlyVars(){
+  const v=['relative_humidity_2m','cloud_cover_low','cloud_cover_mid','cloud_cover_high','precipitation',
+    'wind_speed_600hPa','wind_direction_600hPa','wind_speed_700hPa','wind_direction_700hPa','temperature_850hPa','temperature_600hPa'];
+  for(const L of LV){ v.push('relative_humidity_'+L+'hPa','cloud_cover_'+L+'hPa','geopotential_height_'+L+'hPa'); }
+  return v.join(',');
+}
+function buildUrlFor(points){
+  return 'https://api.open-meteo.com/v1/forecast?latitude='+points.map(x=>x.lat).join(',')
+    +'&longitude='+points.map(x=>x.lon).join(',')
+    +'&hourly='+hourlyVars()
+    +'&models=jma_seamless&wind_speed_unit=ms&timezone=Asia%2FTokyo&past_hours=6&forecast_days=3';
+}
+function buildUrl(view){return buildUrlFor(pointsFor(view));}
+// 全国一览：所有观测点的取样点去重后一次抓取
+function rankPoints(){
+  const map=new Map(), list=[], idxOf={};
+  for(const [k,v] of Object.entries(VIEWS)){
+    idxOf[k]=pointsFor(v).map(p=>{const key=p.lat+','+p.lon; if(!map.has(key)){map.set(key,list.length);list.push(p);} return map.get(key);});
+  }
+  return {list,idxOf};
+}
+
+// ---- 大气剖面 ----
+function profileAt(loc,j){
+  const h=loc.hourly, elev=nn(loc.elevation)??0, pts=[];
+  for(const L of LV){
+    const z=nn(h['geopotential_height_'+L+'hPa']?.[j]), rh=nn(h['relative_humidity_'+L+'hPa']?.[j]), c=nn(h['cloud_cover_'+L+'hPa']?.[j]);
+    if(z==null||rh==null||c==null) continue;
+    if(z<elev+60) continue;
+    pts.push({z,rh,c});
+  }
+  if(pts.length<4) return fallbackProfile(loc,j);
+  pts.sort((a,b)=>a.z-b.z);
+  const rh2=nn(h.relative_humidity_2m?.[j]);
+  pts.unshift({z:elev+10, rh: rh2??pts[0].rh, c:pts[0].c});
+  return pts;
+}
+function fallbackProfile(loc,j){
+  const h=loc.hourly, elev=nn(loc.elevation)??0;
+  const lo=nn(h.cloud_cover_low?.[j])??0, mi=nn(h.cloud_cover_mid?.[j])??0, hi=nn(h.cloud_cover_high?.[j])??0;
+  const rh2=nn(h.relative_humidity_2m?.[j])??60, rhOf=c=>40+c*0.55;
+  return [{z:elev+10,rh:rh2,c:lo*0.5},{z:1500,rh:rhOf(lo),c:lo},{z:3000,rh:rhOf(Math.max(lo,mi)),c:Math.max(lo*0.6,mi*0.5)},{z:5000,rh:rhOf(mi),c:mi},{z:9000,rh:rhOf(hi),c:hi*0.4}];
+}
+function sampleP(pts,z){
+  const n=pts.length;
+  if(z<=pts[0].z) return pts[0];
+  if(z>=pts[n-1].z) return pts[n-1];
+  for(let k=1;k<n;k++){
+    if(z<=pts[k].z){
+      const a=pts[k-1], b=pts[k];
+      let f=(z-a.z)/((b.z-a.z)||1);
+      f = f<0.5 ? 2*f*f : 1-2*(1-f)*(1-f);
+      return {rh:a.rh+(b.rh-a.rh)*f, c:a.c+(b.c-a.c)*f};
+    }
+  }
+  return pts[n-1];
+}
+function extParts(node,z,precip,hazeMul){
+  const cloud = 3.0*Math.pow(clamp(node.c/100,0,1),1.8);
+  const hw = z<1200 ? 1 : z<3000 ? 1-(z-1200)/1800 : 0;
+  const haze = 0.5*Math.pow(clamp((node.rh-65)/30,0,1),2)*hw*hazeMul;
+  const rain = precip>0.1 ? 0.8+0.4*Math.min(1,precip) : 0;
+  return {cloud,haze,rain};
+}
+// ---- 地形云风险（模型云量里常常看不出来的那部分）----
+// 吊るし雲・笠雲：山顶附近风强 + 湿度高 + 大气稳定
+// 旗雲・雪煙：强风时从山顶向下风侧拖出，下风侧（风往哪吹，那一侧）的观测点受影响
+function oroRisk(fLoc,j,meta){
+  const h=fLoc.hourly;
+  const ws6=nn(h.wind_speed_600hPa?.[j]), ws7=nn(h.wind_speed_700hPa?.[j]);
+  const wd6=nn(h.wind_direction_600hPa?.[j]), wd7=nn(h.wind_direction_700hPa?.[j]);
+  if(ws6==null&&ws7==null) return {len:0,ban:0,ws:null,known:false};
+  const ws=(ws6!=null&&ws7!=null)?0.6*ws6+0.4*ws7:(ws6??ws7);
+  const t850=nn(h.temperature_850hPa?.[j]), t600=nn(h.temperature_600hPa?.[j]);
+  const lapse=(t850!=null&&t600!=null)?(t850-t600)/2.75:6.5;      // K/km，小=稳定
+  const stab=clamp((8-lapse)/3,0.25,1);
+  const node=sampleP(profileAt(fLoc,j),3600);
+  const len=clamp((ws-10)/12,0,1)*clamp((node.rh-70)/22,0,1)*stab;
+  const wd=wd6??wd7;
+  const lee=wd==null?0.5:Math.max(0,Math.cos(toRad(angDiff((wd+180)%360,meta.brgBack))));
+  const ban=clamp(((ws6??ws)-14)/12,0,1)*lee;
+  return {len,ban,ws,known:true};
+}
+function bandEval(h,profs,precs,locs,ctx){
+  let tc=0,pc=0,hz=0,rn=0;
+  const hobs=ctx.meta.hobs;
+  for(let i=0;i<TS.length;i++){
+    const elev=nn(locs[i].elevation)??0;
+    const z = i===TS.length-1 ? h : Math.max(hobs+TS[i]*(h-hobs), elev+20);
+    const node=sampleP(profs[i],z);
+    const e=extParts(node,z,precs[i],1+1.5*ctx.back);
+    if(i===TS.length-1) tc+=PW[i]*e.cloud; else pc+=PW[i]*e.cloud;
+    hz+=PW[i]*e.haze; rn+=PW[i]*e.rain;
+  }
+  const nodeF=sampleP(profs[TS.length-1],h), cm=clamp(nodeF.c/100,0,1);
+  const oro=clamp((h-2800)/700,0,1)*2.2*ctx.oro.len*(1-cm)+clamp((h-3000)/600,0,1)*1.4*ctx.oro.ban;
+  return {T:Math.exp(-(tc+pc+hz+rn+oro)), parts:{target:tc,path:pc,haze:hz,rain:rn,oro}};
+}
+function labelOf(S,W){
+  if(W>=60&&S<45) return {k:'cap2', t:'山腰看得见，山顶被遮', j:'山頂が隠れる'};
+  if(W>=80) return {k:'full', t:'整座都在！冲！', j:'全景クッキリ'};
+  if(W>=60) return {k:'good', t:'基本全景，可以出发', j:'よく見える'};
+  if(S>=50) return {k:'cap',  t:'只剩小顶，别白跑', j:'頭だけ'};
+  if(S>=30||W>=30) return {k:'faint', t:'若隐若现，看运气', j:'うっすら'};
+  return {k:'none', t:'富士山今天休息', j:'見えない'};
+}
+function riskLabel(v){return v<0.25?'低':v<0.55?'中':'高';}
+function whyText(parts,back,oro){
+  const tot=parts.target+parts.path+parts.haze+parts.rain+parts.oro;
+  let s;
+  if(tot<0.35) s='空气通透，没有明显遮挡';
+  else{
+    const m=[['target','富士山体周围有云'],['path','视线途中有云'],['haze','低空湿度大，发霾'],['rain','有降水'],['oro','地形云风险（吊るし雲／旗雲）']];
+    m.sort((a,b)=>parts[b[0]]-parts[a[0]]);
+    s='主要遮挡：'+m[0][1];
+  }
+  if(oro&&oro.len>=0.4) s+='；山顶附近易出吊るし雲／笠雲';
+  if(oro&&oro.ban>=0.4) s+='；强风下山顶可能拖旗雲／雪煙';
+  if(back>=0.4) s+='；逆光，山体会发白发糊';
+  return s;
+}
+function evalHour(locs,j,ctx){
+  const profs=locs.map(l=>profileAt(l,j));
+  const precs=locs.map(l=>nn(l.hourly.precipitation?.[j])??0);
+  const oro=oroRisk(locs[locs.length-1],j,ctx.meta);
+  const c2={meta:ctx.meta,back:ctx.back,oro};
+  const bands=BAND_H.map(h=>bandEval(h,profs,precs,locs,c2));
+  const act=BAND_H.map((h,i)=>i===0||h>ctx.meta.hide);
+  const Ts=bands.map(b=>b.T);
+  const S=(Ts[0]*2+Ts[1])/3;
+  let sw=0,sT=0; Ts.forEach((t,i)=>{if(act[i]){sw+=BAND_W[i];sT+=BAND_W[i]*t;}});
+  const W=sT/sw;
+  const parts={target:0,path:0,haze:0,rain:0,oro:0};
+  bands.forEach((b,i)=>{if(act[i]) for(const k in parts) parts[k]+=b.parts[k]*BAND_W[i]/sw;});
+  let low=null, allClear=true;
+  for(let i=0;i<Ts.length;i++){ if(!act[i]) break; if(Ts[i]>=CLEAR_T) low=EDGES[i+1]; else {allClear=false;break;} }
+  const Si=Math.round(S*100), Wi=Math.round(W*100);
+  return {S:Si,W:Wi,Ts:Ts.map(t=>Math.round(t*100)),act,low,allClear,parts,why:whyText(parts,ctx.back,oro),
+          verdict:labelOf(Si,Wi),oro,back:ctx.back};
+}
+function evalAll(data,view){
+  const locs=Array.isArray(data)?data:[data];
+  const v=view||{lat:35.3,lon:139.5,elev:5,hide:2000}, meta=viewMeta(v);
+  const time=locs[0].hourly.time;
+  return time.map((tm,j)=>{
+    const ti=Date.parse(tm+':00Z');
+    const b=backStrength(ti,v,meta);
+    const r=evalHour(locs,j,{meta,back:b.s});
+    r.time=tm; r.ti=ti; r.hour=+tm.slice(11,13); r.date=tm.slice(0,10); r.sunAz=b.az; r.sunEl=b.el;
+    return r;
+  });
+}
+function sunMinutes(dateStr,lat,lon){
+  const y=+dateStr.slice(0,4), m=+dateStr.slice(5,7), d=+dateStr.slice(8,10);
+  const N=Math.round((Date.UTC(y,m-1,d)-Date.UTC(y,0,0))/864e5);
+  const g=2*Math.PI/365*(N-1);
+  const eot=229.18*(0.000075+0.001868*Math.cos(g)-0.032077*Math.sin(g)-0.014615*Math.cos(2*g)-0.040849*Math.sin(2*g));
+  const decl=0.006918-0.399912*Math.cos(g)+0.070257*Math.sin(g)-0.006758*Math.cos(2*g)+0.000907*Math.sin(2*g)-0.002697*Math.cos(3*g)+0.00148*Math.sin(3*g);
+  const la=lat*Math.PI/180;
+  const ha=Math.acos(clamp(Math.cos(90.833*Math.PI/180)/(Math.cos(la)*Math.cos(decl))-Math.tan(la)*Math.tan(decl),-1,1))*180/Math.PI;
+  return {rise:720-4*(lon+ha)-eot+540, set:720-4*(lon-ha)-eot+540};
+}
+function markDay(hours,view){
+  const cache={};
+  for(const h of hours){
+    const s=cache[h.date]||(cache[h.date]=sunMinutes(h.date,view.lat,view.lon));
+    h.sun=s; h.day=(h.hour*60+60>s.rise)&&(h.hour*60<s.set);
+  }
+}
+function findWindows(hours,fromIdx){
+  const out=[]; let cur=null;
+  const close=j=>{ if(cur){cur.end=j-1;cur.next=hours[j]||null;out.push(cur);cur=null;} };
+  for(let j=fromIdx;j<hours.length;j++){
+    const h=hours[j];
+    const kind=!h.day?null:((h.W>=60&&h.S>=45)?'full':(h.S>=50?'cap':null));
+    if(cur&&kind===cur.kind){cur.peak=Math.max(cur.peak,kind==='full'?h.W:h.S); if(kind==='full'&&h.W>=cur.peakVal){cur.peakVal=h.W;cur.peakIdx=j;}}
+    else{ close(j); if(kind){cur={kind,start:j,peak:kind==='full'?h.W:h.S,peakVal:h.W,peakIdx:j};} }
+  }
+  close(hours.length);
+  return out;
+}
+// 未来 36 小时白天里最好的一小时
+function bestHour(hours,fromIdx){
+  let best=null;
+  for(let j=fromIdx;j<Math.min(hours.length,fromIdx+37);j++){const h=hours[j]; if(!h.day) continue; if(!best||h.W>best.W||(h.W===best.W&&h.S>best.S)) best=h;}
+  return best;
+}
+function diffHours(oldMap,newHours,nowTi){
+  let maxd=0,at=null,was=null;
+  for(const h of newHours){
+    if(h.ti<nowTi) continue;
+    const o=oldMap.get(h.time); if(!o) continue;
+    const d=Math.max(Math.abs(h.S-o.S),Math.abs(h.W-o.W));
+    if(d>maxd){maxd=d;at=h;was=o;}
+  }
+  return {changed:maxd>=1,maxd,at,was};
+}
+// ==END_CORE==
+
+// ================= UI =================
+const $=s=>document.querySelector(s);
+const POLL_MS=5*60*1000, RANK_MS=15*60*1000;
+const state={tab:'one',view:'yui',hours:[],sel:0,nowIdx:0,map:null,log:[],lastOk:null,nextAt:0,busy:false,retry:0,
+  rank:null,rsel:null,rbusy:false,rerr:null};
+try{const v=localStorage.getItem('fuji.view'); if(v&&VIEWS[v]) state.view=v;}catch(e){}
+
+const colOf=v=>v>=70?'var(--g)':v>=50?'var(--y)':v>=30?'var(--o)':'var(--r)';
+const pad=n=>String(n).padStart(2,'0');
+const hm=h=>pad(h.hour)+':00';
+function jstNow(){return Date.now()+9*3600e3;}
+function nowDateStr(){return new Date(jstNow()).toISOString().slice(0,10);}
+function dayLabel(h,nowDate){
+  if(h.date===nowDate) return '今天';
+  const diff=Math.round((Date.parse(h.date+'T00:00:00Z')-Date.parse(nowDate+'T00:00:00Z'))/864e5);
+  return diff===1?'明天':diff===2?'后天':h.date.slice(5);
+}
+const compass=d=>['北','东北','东','东南','南','西南','西','西北'][Math.round(d/45)%8];
+const riskCls=v=>v<0.25?'ok':v<0.55?'mid':'hi';
+
+function mountainSvg(h,meta){
+  const top=38,bot=175,yOf=z=>top+(3776-z)/(3776-1000)*(bot-top);
+  const path='M0 175 C 60 168, 105 95, 140 38 Q160 31 180 38 C 215 95, 260 168, 320 175 Z';
+  let bands='';
+  const nb=EDGES.length-1;
+  for(let i=0;i<nb;i++){
+    if(!h.act[i]) continue;
+    const y1=yOf(EDGES[i]), y2=yOf(EDGES[i+1]), T=h.Ts[i]/100, k=i/(nb-1);
+    const r=Math.round(243-(243-111)*k), g=Math.round(246-(246-134)*k), b=Math.round(251-(251-184)*k);
+    bands+=`<rect x="0" y="${y1}" width="320" height="${y2-y1+0.6}" fill="rgb(${r},${g},${b})" opacity="${(0.22+0.78*T).toFixed(2)}"/>`
+          +`<rect x="0" y="${y1}" width="320" height="${y2-y1+0.6}" fill="#c9d3e6" opacity="${((1-T)*0.8).toFixed(2)}"/>`;
+  }
+  const yh=clamp(yOf(meta.hide),top,bot);
+  const lowTxt=h.low!=null&&h.Ts[0]>=45?(h.allClear?'可见部分全部看得见':h.low+'m 以上看得见'):'';
+  const dAz=((h.sunAz-meta.brg+540)%360)-180;
+  const sunDeg=(Math.abs(dAz)<70&&h.sunEl>-3&&h.sunEl<60)?`<circle cx="${160+dAz*2.2}" cy="${clamp(150-h.sunEl*2.2,12,150)}" r="7" fill="#ffd27a" opacity="${(0.35+0.55*h.back).toFixed(2)}"/>`:'';
+  return `<svg viewBox="0 0 320 190" role="img" aria-label="富士山可见部分示意">
+  <defs><clipPath id="fc"><path d="${path}"/></clipPath>
+  <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#16224a"/><stop offset=".7" stop-color="#40507e"/><stop offset="1" stop-color="#e9936a" stop-opacity=".55"/></linearGradient></defs>
+  <rect width="320" height="190" fill="url(#sky)"/>${sunDeg}
+  <path d="${path}" fill="rgba(255,255,255,.05)" stroke="rgba(255,255,255,.18)" stroke-width="1"/>
+  <g clip-path="url(#fc)">${bands}<rect x="0" y="${yh}" width="320" height="${bot-yh+1}" fill="#101a33" opacity=".9"/></g>
+  <path d="M0 ${yh+10} Q40 ${yh+2} 80 ${yh+12} T160 ${yh+8} T240 ${yh+14} T320 ${yh+9} L320 190 L0 190 Z" fill="#0b1328"/>
+  <text x="8" y="184" fill="#7f90b8" font-size="9">地形・地球曲率で隠れる（≈${Math.round(meta.hide/50)*50}m以下）</text>
+  ${lowTxt?`<text x="312" y="${yOf(Math.max(h.low,meta.hide))-3}" text-anchor="end" fill="#fff" font-size="10">▲ ${lowTxt}</text><line x1="150" x2="316" y1="${yOf(Math.max(h.low,meta.hide))}" y2="${yOf(Math.max(h.low,meta.hide))}" stroke="rgba(255,255,255,.55)" stroke-dasharray="3 3"/>`:''}
+  </svg>`;
+}
+
+function chartSvg(){
+  const hrs=state.hours; const i0=Math.max(0,state.nowIdx-3), i1=Math.min(hrs.length-1,i0+36);
+  const n=Math.max(1,i1-i0), Wd=340,Ht=180,L=26,R=8,T=10,B=24;
+  const x=k=>L+(Wd-L-R)*(k/n), y=v=>T+(Ht-T-B)*(1-v/100);
+  let g='';
+  for(let k=0;k<=n;k++){const h=hrs[i0+k]; if(!h.day){g+=`<rect x="${x(k)-(Wd-L-R)/n/2}" y="${T}" width="${(Wd-L-R)/n}" height="${Ht-T-B}" fill="#000" opacity=".28"/>`;}}
+  [30,50,70].forEach(v=>{g+=`<line x1="${L}" x2="${Wd-R}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,.15)" stroke-dasharray="2 4"/><text x="${L-4}" y="${y(v)+3}" text-anchor="end" fill="#7f90b8" font-size="9">${v}</text>`;});
+  const ptsW=[],ptsS=[];
+  for(let k=0;k<=n;k++){const h=hrs[i0+k]; ptsW.push(`${x(k).toFixed(1)},${y(h.W).toFixed(1)}`); ptsS.push(`${x(k).toFixed(1)},${y(h.S).toFixed(1)}`);}
+  g+=`<polygon points="${x(0)},${y(0)} ${ptsW.join(' ')} ${x(n)},${y(0)}" fill="rgba(95,227,161,.18)"/>`;
+  g+=`<polyline points="${ptsW.join(' ')}" fill="none" stroke="#5fe3a1" stroke-width="2.2" stroke-linejoin="round"/>`;
+  g+=`<polyline points="${ptsS.join(' ')}" fill="none" stroke="#ffc857" stroke-width="1.8" stroke-dasharray="5 3" stroke-linejoin="round"/>`;
+  for(let k=0;k<=n;k++){const h=hrs[i0+k]; if(h.back>=0.15){g+=`<rect x="${x(k)-(Wd-L-R)/n/2}" y="${Ht-B-5}" width="${(Wd-L-R)/n}" height="5" fill="#ff9e5e" opacity="${(0.3+0.6*h.back).toFixed(2)}"/>`;}}
+  for(let k=0;k<=n;k++){const h=hrs[i0+k]; if(h.hour%6===0){g+=`<text x="${x(k)}" y="${Ht-8}" text-anchor="middle" fill="#9fb0d0" font-size="10">${pad(h.hour)}</text>`; if(h.hour===0)g+=`<line x1="${x(k)}" x2="${x(k)}" y1="${T}" y2="${Ht-B}" stroke="rgba(255,255,255,.25)"/>`;}}
+  if(state.nowIdx>=i0&&state.nowIdx<=i1){const k=state.nowIdx-i0; g+=`<line x1="${x(k)}" x2="${x(k)}" y1="${T}" y2="${Ht-B}" stroke="#ff9e5e" stroke-width="1" stroke-dasharray="2 2"/><text x="${x(k)}" y="${T+9}" fill="#ff9e5e" font-size="9" text-anchor="middle">现在</text>`;}
+  const sk=clamp(state.sel-i0,0,n), sh=hrs[i0+sk];
+  g+=`<line x1="${x(sk)}" x2="${x(sk)}" y1="${T}" y2="${Ht-B}" stroke="#fff" stroke-width="1.5"/><circle cx="${x(sk)}" cy="${y(sh.W)}" r="4" fill="#5fe3a1" stroke="#fff"/><circle cx="${x(sk)}" cy="${y(sh.S)}" r="3.5" fill="#ffc857" stroke="#fff"/>`;
+  return `<svg id="chart" viewBox="0 0 ${Wd} ${Ht}" style="width:100%;height:auto;touch-action:pan-y" data-i0="${i0}" data-n="${n}" data-l="${L}" data-w="${Wd}" data-r="${R}">${g}</svg>`;
+}
+
+function renderOne(){
+  if(!state.hours.length){ $('#main').innerHTML='<div class="card empty">正在抓取最新气象数据…</div>'; return; }
+  const view=VIEWS[state.view], meta=viewMeta(view);
+  const hrs=state.hours, h=hrs[state.sel], v=h.verdict, nd=nowDateStr();
+  const isNow=state.sel===state.nowIdx;
+  const wins=findWindows(hrs,state.nowIdx);
+  const fullW=wins.find(w=>w.kind==='full'), capW=wins.find(w=>w.kind==='cap');
+  let call='';
+  if(fullW){
+    const a=hrs[fullW.start], b=hrs[fullW.end], pk=hrs[fullW.peakIdx], nx=fullW.next;
+    const tail=nx?(nx.S>=50&&nx.W<60?`，<b>${hm(nx)} 起只剩头</b>`:nx.W<60?`，${hm(nx)} 起转差`:''):'';
+    call=`<div class="card call"><b>想看全景：</b>${dayLabel(a,nd)} ${hm(a)}–${pad(b.hour+1)}:00（最佳 ${hm(pk)}，全体 ${pk.W}）${tail}。<div class="sub" style="margin-top:4px">得赶在这之前“到达”，不是“出发”。</div></div>`;
+  }else if(capW){
+    const a=hrs[capW.start], b=hrs[capW.end];
+    call=`<div class="card call"><b>未来 36 小时没有全景窗口。</b>最好的是 ${dayLabel(a,nd)} ${hm(a)}–${pad(b.hour+1)}:00，只有山顶会露出来。</div>`;
+  }else call=`<div class="card call"><b>未来 36 小时白天基本看不到富士山。</b>下次数据更新后我会自动重算。</div>`;
+  const rows=wins.slice(0,5).map(w=>{
+    const a=hrs[w.start], b=hrs[w.end], nx=w.next, after=nx?` → ${hm(nx)} ${nx.verdict.j}`:'';
+    return `<div class="win"><span>${dayLabel(a,nd)} ${hm(a)}–${pad(b.hour+1)}:00<div class="sub">峰值 ${w.peak}${after}</div></span><span class="k ${w.kind}">${w.kind==='full'?'全景':'只有头'}</span></div>`;
+  }).join('')||'<div class="sub">暂无</div>';
+  const bandsHtml=h.Ts.map((t,i)=>h.act[i]?`<span>${EDGES[i]}m</span><span class="bar"><i style="width:${t}%;background:${colOf(t)}"></i></span><span style="text-align:right">${t}</span>`:'').join('');
+  const logHtml=state.log.length?state.log.map(s=>`<li>${s}</li>`).join(''):'<li>还没有变化记录</li>';
+  const night=!h.day?'（夜间，仅供参考）':'';
+  const o=h.oro, bk=h.back;
+  const oroHtml=o.known?`<div class="risks">
+      <span>吊るし雲・笠雲<div class="sub">山顶附近风强＋湿＋稳定</div></span><span class="tag ${riskCls(o.len)}">${riskLabel(o.len)}</span>
+      <span>旗雲・雪煙<div class="sub">强风时山顶向下风侧拖出，${compass(meta.brgBack)}侧的你在${o.ban>0.05?'下风':'非下风'}侧</div></span><span class="tag ${riskCls(o.ban)}">${riskLabel(o.ban)}</span>
+      <span>逆光<div class="sub">太阳${compass(h.sunAz)}方 ${Math.round(h.sunAz)}° 高${Math.round(h.sunEl)}°，富士山在${compass(meta.brg)}方 ${Math.round(meta.brg)}°</div></span><span class="tag ${riskCls(bk)}">${bk<0.05?'无':riskLabel(bk)}</span>
+    </div><div class="sub" style="margin-top:8px">山顶风约 ${o.ws.toFixed(0)} m/s。这几项是用风、湿度、稳定度估的，云图和模型云量里常看不到，已经计入指数。</div>`
+    :`<div class="sub">这个时刻没拿到高空风数据，地形云没计入。</div>`;
+  $('#main').innerHTML=`
+  <div class="card hero">${mountainSvg(h,meta)}
+    <div class="nums">
+      <div class="num"><small>山顶 頭</small><b style="color:${colOf(h.S)}">${h.S}</b></div>
+      <div class="num"><small>全体 全景</small><b style="color:${colOf(h.W)}">${h.W}</b></div>
+    </div>
+    <div class="verdict"><div class="v1">${v.t} <span class="sub">${v.j}</span></div>
+      <div class="v2">${view.name} · 距富士山 ${Math.round(meta.d)}km<br>${dayLabel(h,nd)} ${hm(h)}${isNow?'（现在）':''}${night} · ${h.why}</div></div>
+  </div>
+  <div class="nav"><button id="prev">◀</button>
+    <div class="t">${dayLabel(h,nd)} ${hm(h)}<small>${isNow?'现在':'点图表或按钮换时间'}</small></div>
+    <button id="next">▶</button>${isNow?'':'<button id="now">现在</button>'}</div>
+  ${call}
+  <div class="card"><h2>未来 36 小时　<span style="color:var(--g)">━ 全体</span>　<span style="color:var(--o)">╍ 山顶</span>　<span style="color:var(--acc)">▬ 逆光</span></h2>${chartSvg()}</div>
+  <div class="card"><h2>地形云・逆光（云图看不出来的那部分）</h2>${oroHtml}</div>
+  <div class="card"><h2>窗口一览（白天）</h2>${rows}</div>
+  <div class="card"><h2>山体各高度的通透度（%）</h2><div class="bands">${bandsHtml}</div>
+    <div class="sub" style="margin-top:6px">≥45 算看得见。只列出从这个观测点能看到的高度。</div></div>
+  <div class="card"><h2>数据更新记录</h2><ul class="log">${logHtml}</ul></div>
+  ${helpCard()}`;
+  document.title=`山${hrs[state.nowIdx].S} 全${hrs[state.nowIdx].W} · 富士山`;
+  $('#prev').onclick=()=>{state.sel=Math.max(0,state.sel-1);render();};
+  $('#next').onclick=()=>{state.sel=Math.min(hrs.length-1,state.sel+1);render();};
+  const nb=$('#now'); if(nb) nb.onclick=()=>{state.sel=state.nowIdx;render();};
+  const svg=$('#chart');
+  svg.addEventListener('click',e=>{
+    const r=svg.getBoundingClientRect(), W=+svg.dataset.w, L=+svg.dataset.l, R=+svg.dataset.r, n=+svg.dataset.n, i0=+svg.dataset.i0;
+    const px=(e.clientX-r.left)/r.width*W;
+    state.sel=i0+Math.round(clamp((px-L)/(W-L-R),0,1)*n); render();
+  });
+}
+function helpCard(){
+  return `<div class="card"><details><summary>指数怎么算的</summary>
+    <p>数据：气象厅 MSM／GSM 模型（经 Open-Meteo），沿「观测点→富士山」视线取 5 个点，逐层看云量、湿度、降水。</p>
+    <p><b>山顶</b>＝山顶约 400m 的通透度；<b>全体</b>＝这个观测点能看到的山体各高度通透度的面积加权平均。看不到的下半部分（被地形或地球曲率挡住）不计，各观测点的遮挡高度是估算值。</p>
+    <p><b>地形云</b>：风速、山顶湿度、大气稳定度估算吊るし雲／笠雲；强风＋你在下风侧时估算旗雲／雪煙。<b>逆光</b>：太阳在富士山方向±40°且高度角低时，霾和薄雾被照亮，山体发白，指数里会多扣一些。</p>
+    <p>早上全景、到了只剩头，通常是白天升温后低空湿度上升、视线途中和山腰生云。图表里能看到它是几点掉下来的。</p>
+    <p>这是模型预报换算的指数，不是实测可视距离，现场以肉眼为准。</p></details></div>`;
+}
+
+// ---- 全国一览 ----
+function renderAll(){
+  const rk=state.rank;
+  if(!rk){ $('#main').innerHTML=`<div class="card empty">${state.rerr?('抓取失败：'+state.rerr+'<br>稍后会自动重试'):'正在抓取全国各观测点数据…'}</div>`; return; }
+  const idx=state.rsel, nd=nowDateStr();
+  const first=Object.values(rk.by)[0][idx];
+  const list=Object.entries(rk.by).map(([k,hs])=>({k,v:VIEWS[k],h:hs[idx],best:bestHour(hs,rk.nowIdx),meta:viewMeta(VIEWS[k])}));
+  list.sort((a,b)=>(b.h.W+b.h.S*0.3)-(a.h.W+a.h.S*0.3));
+  const rowsHtml=list.map((it,i)=>{
+    const h=it.h, tags=[];
+    if(h.oro.known&&h.oro.len>=0.25) tags.push(`<span class="tag ${riskCls(h.oro.len)}">吊るし雲${riskLabel(h.oro.len)}</span>`);
+    if(h.oro.known&&h.oro.ban>=0.25) tags.push(`<span class="tag ${riskCls(h.oro.ban)}">旗雲${riskLabel(h.oro.ban)}</span>`);
+    if(h.back>=0.25) tags.push(`<span class="tag mid">逆光</span>`);
+    const b=it.best?`最佳 ${dayLabel(it.best,nd)} ${hm(it.best)}（${it.best.W}）`:'';
+    return `<div class="rk" data-k="${it.k}"><span class="n">${i+1}</span>
+      <span><span class="nm">${it.v.name}</span><div class="sub">${it.v.r} · ${Math.round(it.meta.d)}km ${h.verdict.j}${tags.length?'<br>'+tags.join(''):''}${b?'<br>'+b:''}</div></span>
+      <span class="sc"><b style="color:${colOf(h.W)}">${h.W}</b><small>全体</small><b style="color:${colOf(h.S)};font-size:17px">${h.S}</b><small>顶</small></span></div>`;
+  }).join('');
+  const isNow=idx===rk.nowIdx;
+  $('#main').innerHTML=`
+  <div class="nav"><button id="rprev">◀</button>
+    <div class="t">${dayLabel(first,nd)} ${hm(first)}<small>${isNow?'现在':'各观测点在这个时刻的指数'}</small></div>
+    <button id="rnext">▶</button>${isNow?'':'<button id="rnow">现在</button>'}</div>
+  <div class="card"><h2>全国观测点排名（全体指数从高到低，点一下看详情）</h2>${rowsHtml}</div>
+  <div class="card"><div class="sub">每 15 分钟更新一次排名。夜间的数值只是参考。</div></div>
+  ${helpCard()}`;
+  document.title=`富士山一览 · ${list[0].v.name} ${list[0].h.W}`;
+  const n=Object.values(rk.by)[0].length;
+  $('#rprev').onclick=()=>{state.rsel=Math.max(0,state.rsel-1);render();};
+  $('#rnext').onclick=()=>{state.rsel=Math.min(n-1,state.rsel+1);render();};
+  const rn=$('#rnow'); if(rn) rn.onclick=()=>{state.rsel=rk.nowIdx;render();};
+  document.querySelectorAll('.rk').forEach(el=>el.onclick=()=>chooseView(el.dataset.k));
+}
+function render(){ state.tab==='one'?renderOne():renderAll(); }
+
+function setChip(kind,text){ const c=$('#live'); c.className='chip'+(kind?' '+kind:''); $('#liveTx').textContent=text; }
+function tickChip(){
+  const t=state.tab==='one'?state.lastOk:(state.rank&&state.rank.at); if(!t) return;
+  const el=$('#live');
+  if(el.classList.contains('err')||Date.now()<(state.flashUntil||0)) return;
+  const ago=Math.round((Date.now()-t)/60000);
+  const next=state.tab==='one'?state.nextAt:(state.rank.at+RANK_MS);
+  const left=Math.max(0,Math.round((next-Date.now())/1000));
+  $('#liveTx').textContent=`LIVE · ${ago<1?'刚刚':ago+'分钟前'}取得 · ${Math.floor(left/60)}:${pad(left%60)} 后再查`;
+}
+
+async function refresh(manual){
+  if(state.busy) return; state.busy=true;
+  const key=state.view, view=VIEWS[key];
+  try{
+    if(manual) setChip('','正在抓取…');
+    const r=await fetch(buildUrl(view),{cache:'no-store'});
+    if(!r.ok){let m='';try{m=(await r.json()).reason||'';}catch(e){} throw new Error('HTTP '+r.status+' '+m);}
+    const data=await r.json();
+    if(key!==state.view) return;                       // 抓的过程中换了观测点，丢弃
+    const hours=evalAll(data,view); markDay(hours,view);
+    const nowTi=jstNow(); let ni=0; hours.forEach((h,i)=>{if(h.ti<=nowTi) ni=i;});
+    const first=!state.map, old=state.map, oldNow=state.hours[state.nowIdx];
+    const wasNow=state.sel===state.nowIdx||first;
+    state.hours=hours; state.nowIdx=ni; state.sel=wasNow?ni:clamp(state.sel,0,hours.length-1);
+    const cur=hours[ni], t=new Date(nowTi), stamp=`<b>${pad(t.getUTCHours())}:${pad(t.getUTCMinutes())}</b>`;
+    if(first){
+      state.log.unshift(`${stamp} 首次取得（${view.name}）· 现在 山顶 ${cur.S} / 全体 ${cur.W}`);
+    }else{
+      const d=diffHours(old,hours,nowTi);
+      if(d.changed){
+        let s=`${stamp} 新数据 · 现在 山顶 ${oldNow?oldNow.S:'-'}→${cur.S} / 全体 ${oldNow?oldNow.W:'-'}→${cur.W}`;
+        if(oldNow&&oldNow.verdict.k!==cur.verdict.k) s+=`，<b>变成「${cur.verdict.j}」</b>`;
+        if(d.at&&d.at.ti!==cur.ti) s+=`；变化最大：${dayLabel(d.at,nowDateStr())} ${hm(d.at)} 全体 ${d.was.W}→${d.at.W}`;
+        state.log.unshift(s); state.log=state.log.slice(0,15);
+        state.flashUntil=Date.now()+5000; setChip('flash','新数据！指数已更新'); setTimeout(()=>{setChip('','LIVE');tickChip();},5000);
+      }
+    }
+    state.map=new Map(hours.map(h=>[h.time,{S:h.S,W:h.W}]));
+    state.lastOk=Date.now(); state.retry=0; state.nextAt=Date.now()+POLL_MS;
+    if(Date.now()>=(state.flashUntil||0)) setChip('','LIVE');
+    tickChip(); if(state.tab==='one') render();
+  }catch(e){
+    state.retry++; const wait=Math.min(60,15*state.retry); state.nextAt=Date.now()+wait*1000;
+    setChip('err',`抓取失败（${String(e.message||e).slice(0,40)}），${wait}秒后重试`);
+    if(!state.hours.length&&state.tab==='one') $('#main').innerHTML=`<div class="card empty">没抓到数据。<br>这个页面需要联网访问 api.open-meteo.com，<br>请在能联网的浏览器里直接打开。</div>`;
+  }finally{state.busy=false;}
+}
+async function fetchRank(manual){
+  if(state.rbusy) return; state.rbusy=true;
+  try{
+    if(manual||!state.rank) setChip('','正在抓取全国数据…');
+    const rp=rankPoints();
+    const r=await fetch(buildUrlFor(rp.list),{cache:'no-store'});
+    if(!r.ok){let m='';try{m=(await r.json()).reason||'';}catch(e){} throw new Error('HTTP '+r.status+' '+m);}
+    const data=await r.json(), by={};
+    for(const [k,v] of Object.entries(VIEWS)){
+      const hs=evalAll(rp.idxOf[k].map(i=>data[i]),v); markDay(hs,v); by[k]=hs;
+    }
+    const hs0=Object.values(by)[0], nowTi=jstNow(); let ni=0; hs0.forEach((h,i)=>{if(h.ti<=nowTi) ni=i;});
+    const firstTime=!state.rank, wasNow=firstTime||state.rsel===state.rank.nowIdx;
+    state.rank={by,at:Date.now(),nowIdx:ni}; state.rsel=wasNow?ni:clamp(state.rsel,0,hs0.length-1); state.rerr=null;
+    setChip('','LIVE'); tickChip(); if(state.tab==='all') render();
+  }catch(e){
+    state.rerr=String(e.message||e).slice(0,40); setChip('err',`抓取失败（${state.rerr}）`);
+    if(state.tab==='all') render();
+  }finally{state.rbusy=false;}
+}
+
+function chooseView(k){
+  state.view=k; sel.value=k; try{localStorage.setItem('fuji.view',k);}catch(e){}
+  state.map=null; state.hours=[]; state.log=[]; state.lastOk=null; setTab('one'); refresh(true);
+}
+function setTab(t){
+  state.tab=t;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));
+  const el=$('#live'); if(el.classList.contains('err')) setChip('','LIVE');
+  if(t==='all'&&(!state.rank||Date.now()-state.rank.at>RANK_MS)) fetchRank(false);
+  render(); tickChip();
+}
+
+// 观测点选择（按地区分组）
+const sel=$('#view');
+const groups={}; for(const [k,v] of Object.entries(VIEWS)) (groups[v.r]=groups[v.r]||[]).push([k,v]);
+sel.innerHTML=Object.entries(groups).map(([r,a])=>`<optgroup label="${r}">${a.map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('')}</optgroup>`).join('');
+sel.value=state.view;
+sel.onchange=()=>chooseView(sel.value);
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>setTab(b.dataset.tab));
+$('#reload').onclick=()=>state.tab==='one'?refresh(true):fetchRank(true);
+setInterval(()=>{
+  if(state.tab==='one'&&Date.now()>=state.nextAt) refresh(false);
+  if(state.tab==='all'&&(!state.rank||Date.now()-state.rank.at>RANK_MS)&&!state.rbusy) fetchRank(false);
+},15000);
+setInterval(tickChip,1000);
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden) return;
+  if(state.tab==='one'&&Date.now()-(state.lastOk||0)>60000) refresh(false);
+  if(state.tab==='all'&&Date.now()-(state.rank?state.rank.at:0)>RANK_MS) fetchRank(false);
+});
+refresh(false);
+</script>
+</body>
+</html>
